@@ -20,17 +20,20 @@ import { Heart, Coins, ArrowLeft, LogOut, Edit, Send, Wifi, WifiOff, Trophy, Swo
 
 const App: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(() => {
-    const active = sessionStorage.getItem('duoplay_active_user');
-    return active ? JSON.parse(active) : null;
+    try {
+      const active = sessionStorage.getItem('duoplay_active_user');
+      return active ? JSON.parse(active) : null;
+    } catch (e) { return null; }
   });
 
-  // Usando Variáveis de Ambiente VITE_ ou os valores padrão para facilitar o seu deploy
-  const [network] = useState<NetworkConfig>({ 
-    // Fix: Using process.env instead of import.meta.env to resolve TS error in the execution environment
-    supabaseUrl: (process.env as any).VITE_SUPABASE_URL || 'https://zbvezafcmpeuzgsmidt.supabase.co', 
-    // Fix: Using process.env instead of import.meta.env to resolve TS error in the execution environment
-    supabaseKey: (process.env as any).VITE_SUPABASE_KEY || 'sb_publishable_whLbljSn8oCVjOkfGKrXDg_j2U0VPKw', 
-    isEnabled: true 
+  // Configuração robusta para evitar travamentos por variáveis ausentes
+  const [network] = useState<NetworkConfig>(() => {
+    const env = (import.meta as any).env;
+    return { 
+      supabaseUrl: env?.VITE_SUPABASE_URL || 'https://zbvezafcmpeuzgsmidt.supabase.co', 
+      supabaseKey: env?.VITE_SUPABASE_KEY || 'sb_publishable_whLbljSn8oCVjOkfGKrXDg_j2U0VPKw', 
+      isEnabled: true 
+    };
   });
 
   const [view, setView] = useState<'HOME' | 'LOBBY' | 'GAME' | 'PROFILE'>('HOME');
@@ -52,8 +55,12 @@ const App: React.FC = () => {
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
-    if (network.isEnabled) {
-      supabaseRef.current = createClient(network.supabaseUrl, network.supabaseKey);
+    if (network.isEnabled && network.supabaseUrl && network.supabaseKey) {
+      try {
+        supabaseRef.current = createClient(network.supabaseUrl, network.supabaseKey);
+      } catch (e) {
+        console.error("Erro ao inicializar Supabase:", e);
+      }
     }
   }, [network]);
 
