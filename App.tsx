@@ -24,9 +24,12 @@ const App: React.FC = () => {
     return active ? JSON.parse(active) : null;
   });
 
+  // Usando Variáveis de Ambiente VITE_ ou os valores padrão para facilitar o seu deploy
   const [network] = useState<NetworkConfig>({ 
-    supabaseUrl: 'https://zbvezafcmpeuzgsmidt.supabase.co', 
-    supabaseKey: 'sb_publishable_whLbljSn8oCVjOkfGKrXDg_j2U0VPKw', 
+    // Fix: Using process.env instead of import.meta.env to resolve TS error in the execution environment
+    supabaseUrl: (process.env as any).VITE_SUPABASE_URL || 'https://zbvezafcmpeuzgsmidt.supabase.co', 
+    // Fix: Using process.env instead of import.meta.env to resolve TS error in the execution environment
+    supabaseKey: (process.env as any).VITE_SUPABASE_KEY || 'sb_publishable_whLbljSn8oCVjOkfGKrXDg_j2U0VPKw', 
     isEnabled: true 
   });
 
@@ -54,7 +57,6 @@ const App: React.FC = () => {
     }
   }, [network]);
 
-  // Monitor de Presença (V12)
   useEffect(() => {
     const pTimer = setInterval(() => {
       if (partner && Date.now() - partner.lastSeen > 12000) {
@@ -64,7 +66,6 @@ const App: React.FC = () => {
     return () => clearInterval(pTimer);
   }, [partner]);
 
-  // Handshake V12 - Core de Sincronização para Vercel
   useEffect(() => {
     if (!room) {
       setNetStatus('DISCONNECTED');
@@ -72,7 +73,7 @@ const App: React.FC = () => {
     }
     
     setNetStatus('CONNECTING');
-    const channelName = `duoplay_prod_v12_${room.roomId}`;
+    const channelName = `duoplay_v12_prod_${room.roomId}`;
     
     if (supabaseRef.current) {
       const channel = supabaseRef.current.channel(channelName, { 
@@ -106,7 +107,7 @@ const App: React.FC = () => {
       channelRef.current = channel;
     }
 
-    const presenceInterval = setInterval(sendPresence, 3500);
+    const presenceInterval = setInterval(sendPresence, 4000);
     return () => {
       clearInterval(presenceInterval);
       if (channelRef.current) channelRef.current.unsubscribe();
